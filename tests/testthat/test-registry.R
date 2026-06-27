@@ -63,7 +63,7 @@ test_that("tinylog_dict() records columns and sample values in data_dictionary",
   )
 
   df <- data.frame(mpg = c(21, 22, 18, 24, 19), cyl = c(6L, 4L, 8L, 4L, 6L))
-  result <- df |> tinylog_dict("my_data")
+  result <- df |> tinylog_dict(.name = "my_data")
 
   expect_identical(result, df)
 
@@ -73,7 +73,7 @@ test_that("tinylog_dict() records columns and sample values in data_dictionary",
   expect_length(entry$columns$cyl, 5L)
 })
 
-test_that("tinylog_dict() uses sequential names when name is NULL", {
+test_that("tinylog_dict() auto-names entry from df variable name", {
   tmp <- withr::local_tempdir()
   withr::local_dir(tmp)
   withr::local_options(.tinylog_current_script = NULL, .tinylog_registry_path = NULL)
@@ -85,13 +85,14 @@ test_that("tinylog_dict() uses sequential names when name is NULL", {
     record_runtime = FALSE
   )
 
-  df <- data.frame(x = 1:3)
-  df |> tinylog_dict()
-  df |> tinylog_dict()
+  df1 <- data.frame(x = 1:3)
+  df2 <- data.frame(y = 1:3)
+  df1 |> tinylog_dict()
+  df2 |> tinylog_dict()
 
   reg <- yaml::read_yaml("_tinylog_proj.yaml")
-  expect_true(!is.null(reg$data_dictionary[["test.R"]][["input_1"]]))
-  expect_true(!is.null(reg$data_dictionary[["test.R"]][["input_2"]]))
+  expect_true(!is.null(reg$data_dictionary[["test.R"]][["df1"]]))
+  expect_true(!is.null(reg$data_dictionary[["test.R"]][["df2"]]))
 })
 
 test_that("tinylog_dict() omits sample values when sample_values = FALSE", {
@@ -110,7 +111,7 @@ test_that("tinylog_dict() omits sample values when sample_values = FALSE", {
   df |> tinylog_dict(sample_values = FALSE)
 
   reg <- yaml::read_yaml("_tinylog_proj.yaml")
-  entry <- reg$data_dictionary[["test.R"]][["input_1"]]
+  entry <- reg$data_dictionary[["test.R"]][["df"]]
   expect_equal(unlist(entry$columns), c("x", "y"))
 })
 
@@ -130,7 +131,7 @@ test_that("tinylog_dict() truncates long strings at sample_string_length", {
   df |> tinylog_dict(sample_string_length = 18L)
 
   reg <- yaml::read_yaml("_tinylog_proj.yaml")
-  labels <- unlist(reg$data_dictionary[["test.R"]][["input_1"]]$columns$label)
+  labels <- unlist(reg$data_dictionary[["test.R"]][["df"]]$columns$label)
   expect_equal(labels[[1]], "short")
   expect_equal(labels[[2]], "this is a very lon...")
   expect_true(nchar(labels[[2]]) == 18L + 3L)
@@ -153,7 +154,7 @@ test_that("tinylog_dict() respects sample_string_length = Inf", {
   df |> tinylog_dict(sample_string_length = Inf)
 
   reg <- yaml::read_yaml("_tinylog_proj.yaml")
-  val <- reg$data_dictionary[["test.R"]][["input_1"]]$columns$label[[1]]
+  val <- reg$data_dictionary[["test.R"]][["df"]]$columns$label[[1]]
   expect_equal(nchar(val), 100L)
 })
 
@@ -210,10 +211,10 @@ test_that("all three functions work together without source() (simple_main scena
     record_runtime = FALSE
   )
 
-  mtcars |> tinylog_dict("mtcars_raw")
+  mtcars |> tinylog_dict()
 
   dat <- within(mtcars, efficiency_class <- ifelse(mpg > 20, "High", "Low"))
-  dat |> tinylog_dict("mtcars_clean")
+  dat |> tinylog_dict()
 
   out <- file.path(tmp, "mtcars_simple.rds")
   tinylog_output(out)
@@ -221,7 +222,7 @@ test_that("all three functions work together without source() (simple_main scena
   reg <- yaml::read_yaml("_tinylog_proj.yaml")
 
   expect_equal(reg$scripts[["simple_main.R"]]$n_files, 1L)
-  expect_length(reg$data_dictionary[["simple_main.R"]][["mtcars_raw"]]$columns$mpg, 5L)
-  expect_length(reg$data_dictionary[["simple_main.R"]][["mtcars_clean"]]$columns$mpg, 5L)
-  expect_true(!is.null(reg$data_dictionary[["simple_main.R"]][["mtcars_clean"]]$columns$efficiency_class))
+  expect_length(reg$data_dictionary[["simple_main.R"]][["mtcars"]]$columns$mpg, 5L)
+  expect_length(reg$data_dictionary[["simple_main.R"]][["dat"]]$columns$mpg, 5L)
+  expect_true(!is.null(reg$data_dictionary[["simple_main.R"]][["dat"]]$columns$efficiency_class))
 })

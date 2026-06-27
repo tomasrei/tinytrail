@@ -176,7 +176,7 @@ tinylog_script <- function(data_source,
   } else {
     registry <- list(
       `$version`    = "0.1.0",
-      `$learn_more` = "https://data-dict.tidyverse.org",
+      `$learn_more` = "https://github.com/tomasrei/tinylog",
       scripts       = list()
     )
   }
@@ -191,6 +191,7 @@ tinylog_script <- function(data_source,
   )
   if (pin_to_top) entry$pin_to_top <- TRUE
   registry$scripts[[name]] <- entry
+  registry$data_dictionary[[name]] <- NULL
 
   if (sample(20L, 1L) == 1L) {
     message(
@@ -343,7 +344,9 @@ tl_output <- tinylog_output
 #' Requires [tinylog_script()] to have been called first in the same session.
 #'
 #' @param df A data frame.
-#' @param name Character. Label for this entry. Defaults to `"input_1"`, `"input_2"`, etc.
+#' @param .name Character. Label for this entry. Defaults to the variable name of `df`
+#'   as written in the calling code (e.g. `mtcars |> tinylog_dict()` records as `"mtcars"`).
+#'   Override when the expression is not a simple name or when you need a custom label.
 #' @param sample_values Logical. Record 5 sample values per column. Default `TRUE`.
 #' @param sample_string_length Integer or `Inf`. Maximum characters per sample value before truncating with `"..."`. Default `18L`.
 #'
@@ -353,9 +356,9 @@ tl_output <- tinylog_output
 #' @examples
 #' \dontrun{
 #' dat <- read.csv(here::here("data/raw/file.csv")) |> tinylog_dict()
-#' dat <- readRDS(here::here("data/clean/file.rds")) |> tinylog_dict("occupation")
+#' dat <- readRDS(here::here("data/clean/file.rds")) |> tinylog_dict(.name = "occupation")
 #' }
-tinylog_dict <- function(df, name = NULL, sample_values = TRUE, sample_string_length = 18L) {
+tinylog_dict <- function(df, .name = NULL, sample_values = TRUE, sample_string_length = 18L) {
   script_name <- getOption(".tinylog_current_script")
   if (is.null(script_name)) stop(
     "tinylog_dict() requires tinylog_script() to have been called first."
@@ -372,9 +375,14 @@ tinylog_dict <- function(df, name = NULL, sample_values = TRUE, sample_string_le
   if (is.null(registry$data_dictionary))                      registry$data_dictionary <- list()
   if (is.null(registry$data_dictionary[[script_name]]))       registry$data_dictionary[[script_name]] <- list()
 
-  if (is.null(name)) {
+  auto_name <- deparse(substitute(df))
+  name <- if (!is.null(.name)) {
+    .name
+  } else if (grepl("^[A-Za-z._][A-Za-z0-9._]*$", auto_name)) {
+    auto_name
+  } else {
     n <- length(registry$data_dictionary[[script_name]])
-    name <- paste0("input_", n + 1L)
+    paste0("input_", n + 1L)
   }
 
   clip <- function(v) {
