@@ -1,6 +1,6 @@
 Package: tinylog
 Title: Lightweight Script Registry for R Projects
-Version: 0.0.0.9000
+Version: 0.0.0.9004
 Authors@R:
     person("Tomas", "Reivinger", , "tomas.reivinger@gmail.com", role = c("aut", "cre"))
 Description: Tracks which scripts produced which output files by maintaining a
@@ -16,6 +16,8 @@ RoxygenNote: 8.0.0
 URL: https://github.com/tomasrei/tinylog
 BugReports: https://github.com/tomasrei/tinylog/issues
 Suggests:
+    knitr,
+    purrr,
     rstudioapi,
     testthat (>= 3.0.0),
     withr

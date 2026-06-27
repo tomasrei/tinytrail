@@ -1,34 +1,130 @@
-# Walk up from getwd() to find the project root (looks for .Rproj, DESCRIPTION, .here, .git)
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
+.has_root_marker <- function(path) {
+  length(list.files(path, pattern = "\\.Rproj$")) > 0 ||
+    file.exists(file.path(path, "DESCRIPTION"))       ||
+    file.exists(file.path(path, ".here"))             ||
+    file.exists(file.path(path, ".git"))
+}
+
+# Directory of the currently executing script (not necessarily getwd())
+.script_dir <- function() {
+  # source() call stack
+  idx <- which(vapply(sys.calls(), \(x) deparse(x[[1]]) == "source", logical(1)))
+  if (length(idx) > 0) {
+    frame <- sys.frame(idx[length(idx)])
+    path  <- if (is.character(frame$ofile)) frame$ofile
+              else if (is.character(frame$file)) frame$file
+              else NULL
+    if (!is.null(path) && nzchar(path))
+      return(dirname(normalizePath(path, mustWork = FALSE)))
+  }
+  # knitr / Quarto rendering
+  if (requireNamespace("knitr", quietly = TRUE)) {
+    input <- tryCatch(knitr::current_input(dir = TRUE), error = function(e) NULL)
+    if (is.character(input) && nzchar(input))
+      return(dirname(normalizePath(input, mustWork = FALSE)))
+  }
+  # Rscript path/to/script.R
+  file_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+  if (length(file_arg) > 0) {
+    path <- sub("^--file=", "", file_arg[[1L]])
+    return(dirname(normalizePath(path, mustWork = FALSE)))
+  }
+  NULL
+}
+
+# Walk up from getwd() — and also from the script's own directory — to find
+# the project root (.Rproj, DESCRIPTION, .here, .git).
 .find_root <- function() {
-  path <- getwd()
-  for (i in seq_len(20L)) {
-    if (length(list.files(path, pattern = "\\.Rproj$")) > 0 ||
-        file.exists(file.path(path, "DESCRIPTION")) ||
-        file.exists(file.path(path, ".here")) ||
-        file.exists(file.path(path, ".git"))) {
-      return(path)
+  starts <- unique(c(getwd(), .script_dir()))
+  for (start in starts) {
+    path <- start
+    for (i in seq_len(20L)) {
+      if (.has_root_marker(path)) return(path)
+      parent <- dirname(path)
+      if (parent == path) break
+      path <- parent
     }
-    parent <- dirname(path)
-    if (parent == path) break
-    path <- parent
   }
   getwd()
 }
 
-`%||%` <- function(x, y) if (is.null(x)) y else x
+.in_knitr <- function() {
+  requireNamespace("knitr", quietly = TRUE) &&
+    !is.null(tryCatch(knitr::current_input(), error = function(e) NULL))
+}
 
 .order_registry_entry <- function(entry) {
-  key_order <- c("data_source", "description", "updated", "script_runtime", "n_plots", "n_tables", "outputs")
+  key_order <- c("data_source", "description", "first_run", "latest_run", "script_runtime", "n_files", "outputs")
   entry[c(intersect(key_order, names(entry)), setdiff(names(entry), key_order))]
 }
 
+# Format a single scalar value for inline YAML
+.yaml_scalar <- function(v) {
+  if (is.null(v) || (length(v) == 1L && is.na(v))) return("null")
+  if (is.logical(v)) return(if (isTRUE(v)) "true" else "false")
+  if (is.numeric(v)) return(as.character(v))
+  paste0("'", gsub("'", "''", as.character(v)), "'")
+}
+
+# Serialize the data_dictionary section with inline (flow) sequences for column samples
+.format_dd_yaml <- function(dd) {
+  lines <- "data_dictionary:"
+  for (script in names(dd)) {
+    lines <- c(lines, paste0("  ", script, ":"))
+    for (input_name in names(dd[[script]])) {
+      lines <- c(lines, paste0("    ", input_name, ":"))
+      cols <- dd[[script]][[input_name]]$columns
+      if (!is.null(names(cols))) {
+        # sample_values = TRUE: named list — one inline sequence per column
+        lines <- c(lines, "      columns:")
+        for (col_name in names(cols)) {
+          vals <- vapply(cols[[col_name]], .yaml_scalar, character(1L))
+          lines <- c(lines, paste0("        ", .yaml_scalar(col_name), ": [", paste(vals, collapse = ", "), "]"))
+        }
+      } else {
+        # sample_values = FALSE: flat list of column names, also inline
+        col_scalars <- vapply(unlist(cols), .yaml_scalar, character(1L))
+        lines <- c(lines, paste0("      columns: [", paste(col_scalars, collapse = ", "), "]"))
+      }
+    }
+  }
+  paste(lines, collapse = "\n")
+}
+
+# Write the full registry, using custom inline formatting for data_dictionary
+.write_registry <- function(registry, path) {
+  dd   <- registry$data_dictionary
+  main <- registry[names(registry) != "data_dictionary"]
+  main_yaml <- yaml::as.yaml(main)
+  if (is.null(dd) || length(dd) == 0L) {
+    cat(main_yaml, file = path)
+  } else {
+    cat(main_yaml, .format_dd_yaml(dd), "\n", sep = "", file = path)
+  }
+  invisible(NULL)
+}
+
 .get_current_script_name <- function() {
+  # 1. source() call stack — standard usage
   idx <- which(vapply(sys.calls(), \(x) deparse(x[[1]]) == "source", logical(1)))
   if (length(idx) > 0) {
     frame <- sys.frame(idx[length(idx)])
-    path <- if (is.character(frame$ofile)) frame$ofile else if (is.character(frame$file)) frame$file else NULL
+    path  <- if (is.character(frame$ofile)) frame$ofile
+              else if (is.character(frame$file)) frame$file
+              else NULL
     if (!is.null(path) && nzchar(path)) return(basename(path))
   }
+  # 2. knitr / Quarto rendering
+  if (requireNamespace("knitr", quietly = TRUE)) {
+    input <- tryCatch(knitr::current_input(), error = function(e) NULL)
+    if (is.character(input) && nzchar(input)) return(basename(input))
+  }
+  # 3. Rscript path/to/script.R
+  file_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+  if (length(file_arg) > 0) return(basename(sub("^--file=", "", file_arg[[1L]])))
+  # 4. RStudio interactive fallback
   if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
     path <- tryCatch(rstudioapi::getSourceEditorContext()$path, error = function(e) NULL)
     if (is.character(path) && nzchar(path)) return(basename(path))
@@ -40,7 +136,9 @@
 #'
 #' Call once near the top of every script, after sourcing this package.
 #' Creates or updates an entry in `_registry.yaml` and sets the script name
-#' so that [record_output()] can associate outputs with it.
+#' so that [tinylog_output()] can associate outputs with it.
+#'
+#' `tl_script()` is a short alias for `tinylog_script()`.
 #'
 #' @param data_source Character. The input data this script reads (path or description).
 #' @param description Character. One-line description of what the script does.
@@ -49,13 +147,13 @@
 #' @param record_runtime Logical. Record elapsed time on exit. Default `TRUE`.
 #'
 #' @export
-register_script <- function(data_source,
+tinylog_script <- function(data_source,
                              description,
                              name = .get_current_script_name(),
                              pin_to_top = FALSE,
                              record_runtime = TRUE) {
   if (is.null(name)) {
-    message("register_script: could not detect script name; run via source() or pass name= explicitly")
+    message("tinylog_script: could not detect script name; run via source() or pass name= explicitly")
     return(invisible(NULL))
   }
 
@@ -71,46 +169,100 @@ register_script <- function(data_source,
     )
   }
 
+  now <- format(Sys.time(), "%Y-%m-%d %H:%M")
   entry <- list(
     data_source = data_source,
     description = description,
-    updated     = format(Sys.time(), "%Y-%m-%d %H:%M"),
+    first_run   = registry$scripts[[name]]$first_run %||% now,
+    latest_run  = now,
     outputs     = "none"
   )
   if (pin_to_top) entry$pin_to_top <- TRUE
   registry$scripts[[name]] <- entry
 
+  if (sample(20L, 1L) == 1L) {
+    message(
+      "tinylog tip: place tinylog_script() at the very top of '", name, "' ",
+      "(before library() calls) so the runtime covers the full script, not just the code after it."
+    )
+  }
+
   all_names <- names(registry$scripts)
   pinned    <- all_names[vapply(registry$scripts[all_names], \(s) isTRUE(s$pin_to_top), logical(1))]
   rest      <- sort(all_names[!all_names %in% pinned])
   registry$scripts <- lapply(registry$scripts[c(pinned, rest)], .order_registry_entry)
-  yaml::write_yaml(registry, registry_path)
+  .write_registry(registry, registry_path)
 
   options(.tinylog_current_script = name)
 
   if (record_runtime) {
-    .start    <- Sys.time()
-    .name     <- name
-    .reg_path <- registry_path
+    .start_sec <- as.numeric(Sys.time())
+    .name      <- name
+    .reg_path  <- registry_path
+    .order_fn  <- .order_registry_entry
     idx <- which(vapply(sys.calls(), \(x) deparse(x[[1]]) == "source", logical(1)))
-    if (length(idx) > 0) {
-      eval(bquote(on.exit({
-        .elapsed <- round(as.numeric(difftime(Sys.time(), .(.start), units = "mins")), 1)
-        if (file.exists(.(.reg_path))) {
-          .reg <- yaml::read_yaml(.(.reg_path))
-          if (!is.null(.reg$scripts[[.(.name)]])) {
-            .reg$scripts[[.(.name)]]$script_runtime <- paste0(.elapsed, " min")
-            .reg$scripts <- lapply(.reg$scripts, .order_registry_entry)
-            yaml::write_yaml(.reg, .(.reg_path))
-            message(.(.name), ": ", .elapsed, " min elapsed")
+    if (length(idx) == 0L) {
+      if (.in_knitr()) {
+        # Track runtime via knitr document hook — fires after all chunks complete
+        .old_hook <- knitr::knit_hooks$get("document")
+        knitr::knit_hooks$set(document = local({
+          start    <- .start_sec
+          nm       <- .name
+          rp       <- .reg_path
+          of       <- .order_fn
+          old_hook <- .old_hook
+          function(x) {
+            .elapsed <- round((as.numeric(Sys.time()) - start) / 60, 1)
+            if (file.exists(rp)) {
+              .reg <- yaml::read_yaml(rp)
+              if (!is.null(.reg$scripts[[nm]])) {
+                .reg$scripts[[nm]]$script_runtime <- sprintf("%.1f min", .elapsed)
+                .reg$scripts <- lapply(.reg$scripts, of)
+                .write_registry(.reg, rp)
+                message(nm, ": ", sprintf("%.1f min", .elapsed), " elapsed")
+              }
+            }
+            if (is.function(old_hook)) old_hook(x) else x
+          }
+        }))
+      } else {
+        message("runtime tracking requires source() — run via source(here(\"scripts/", name, "\")) to record elapsed time")
+
+      }
+    } else {
+      .write_runtime <- local({
+        start <- .start_sec
+        nm    <- name
+        rp    <- registry_path
+        of    <- .order_registry_entry
+        function() {
+          .elapsed <- round((as.numeric(Sys.time()) - start) / 60, 1)
+          if (file.exists(rp)) {
+            .reg <- yaml::read_yaml(rp)
+            if (!is.null(.reg$scripts[[nm]])) {
+              .reg$scripts[[nm]]$script_runtime <- sprintf("%.1f min", .elapsed)
+              .reg$scripts <- lapply(.reg$scripts, of)
+              .write_registry(.reg, rp)
+              message(nm, ": ", sprintf("%.1f min", .elapsed), " elapsed")
+            }
           }
         }
-      }, add = TRUE, after = TRUE)), envir = sys.frame(idx[length(idx)]))
+      })
+      .idx_val <- idx[length(idx)]
+      do.call(
+        on.exit,
+        list(bquote(.(.write_runtime)()), add = TRUE, after = TRUE),
+        envir = sys.frame(.idx_val)
+      )
     }
   }
 
   invisible(name)
 }
+
+#' @rdname tinylog_script
+#' @export
+tl_script <- tinylog_script
 
 #' Record an output file path in the registry
 #'
@@ -118,7 +270,9 @@ register_script <- function(data_source,
 #' current script's registry entry and returns the path unchanged, so it can be
 #' dropped inline into any save function.
 #'
-#' Requires [register_script()] to have been called first in the same session.
+#' `tl_output()` is a short alias for `tinylog_output()`.
+#'
+#' Requires [tinylog_script()] to have been called first in the same session.
 #'
 #' @param file Character. Absolute path to the output file.
 #'
@@ -127,15 +281,15 @@ register_script <- function(data_source,
 #'
 #' @examples
 #' \dontrun{
-#' ggsave(filename = record_output(here::here("typst/plots/my_plot.png")))
-#' write.csv(tab, file = record_output(here::here("data/misc/summary.csv")))
+#' ggsave(filename = tinylog_output(here::here("typst/plots/my_plot.png")))
+#' write.csv(tab, file = tinylog_output(here::here("data/misc/summary.csv")))
 #' }
-record_output <- function(file) {
+tinylog_output <- function(file) {
   registry_path <- file.path(.find_root(), "_registry.yaml")
   script_name   <- getOption(".tinylog_current_script")
 
   if (is.null(script_name)) stop(
-    "record_output() requires register_script() to have been called first."
+    "tinylog_output() requires tinylog_script() to have been called first."
   )
   if (!file.exists(registry_path)) return(invisible(file))
 
@@ -155,11 +309,83 @@ record_output <- function(file) {
                            startsWith(basename(all_out), "sensitivity_"),
                            basename(all_out))]
 
-  registry$scripts[[script_name]]$outputs  <- outputs
-  registry$scripts[[script_name]]$n_plots  <- sum(grepl("\\.png$", outputs))
-  registry$scripts[[script_name]]$n_tables <- sum(grepl("\\.tex$", outputs))
+  registry$scripts[[script_name]]$outputs <- outputs
+  registry$scripts[[script_name]]$n_files <- length(outputs)
   registry$scripts <- lapply(registry$scripts, .order_registry_entry)
-  yaml::write_yaml(registry, registry_path)
+  .write_registry(registry, registry_path)
 
   invisible(file)
 }
+
+#' @rdname tinylog_output
+#' @export
+tl_output <- tinylog_output
+
+#' Add a data frame to the project data dictionary
+#'
+#' Place at the end of a read/clean pipeline to capture column names and
+#' optionally sample values. Returns the data frame unchanged.
+#'
+#' `tl_dict()` is a short alias for `tinylog_dict()`.
+#'
+#' Requires [tinylog_script()] to have been called first in the same session.
+#'
+#' @param df A data frame.
+#' @param name Character. Label for this entry. Defaults to `"input_1"`, `"input_2"`, etc.
+#' @param sample_values Logical. Record 5 sample values per column. Default `TRUE`.
+#' @param sample_string_length Integer or `Inf`. Maximum characters per sample value before truncating with `"..."`. Default `18L`.
+#'
+#' @return `df`, invisibly.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' dat <- read.csv(here::here("data/raw/file.csv")) |> tinylog_dict()
+#' dat <- readRDS(here::here("data/clean/file.rds")) |> tinylog_dict("occupation")
+#' }
+tinylog_dict <- function(df, name = NULL, sample_values = TRUE, sample_string_length = 18L) {
+  script_name <- getOption(".tinylog_current_script")
+  if (is.null(script_name)) stop(
+    "tinylog_dict() requires tinylog_script() to have been called first."
+  )
+  if (!is.data.frame(df)) stop(
+    "tinylog_dict() requires a data frame."
+  )
+
+  registry_path <- file.path(.find_root(), "_registry.yaml")
+  if (!file.exists(registry_path)) return(invisible(df))
+
+  registry <- yaml::read_yaml(registry_path)
+
+  if (is.null(registry$data_dictionary))                      registry$data_dictionary <- list()
+  if (is.null(registry$data_dictionary[[script_name]]))       registry$data_dictionary[[script_name]] <- list()
+
+  if (is.null(name)) {
+    n <- length(registry$data_dictionary[[script_name]])
+    name <- paste0("input_", n + 1L)
+  }
+
+  clip <- function(v) {
+    if (!(is.character(v) || is.factor(v))) return(v)
+    s <- as.character(v)
+    if (is.finite(sample_string_length) && nchar(s) > sample_string_length)
+      paste0(substr(s, 1L, sample_string_length), "...")
+    else s
+  }
+
+  entry <- list(
+    columns = if (sample_values)
+      lapply(df, \(col) lapply(as.list(head(col, 5L)), clip))
+    else
+      as.list(names(df))
+  )
+
+  registry$data_dictionary[[script_name]][[name]] <- entry
+  .write_registry(registry, registry_path)
+
+  invisible(df)
+}
+
+#' @rdname tinylog_dict
+#' @export
+tl_dict <- tinylog_dict
