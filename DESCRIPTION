@@ -1,13 +1,16 @@
 Package: tinylog
 Title: Lightweight Script Registry for R Projects
-Version: 0.0.0.9004
+Version: 0.1.0
 Authors@R:
-    person("Tomas", "Reivinger", , "tomas.reivinger@gmail.com", role = c("aut", "cre"))
+    person("Tomas", "Reivinger", , "tomas.reivinger@gmail.com", role = c("aut", "cre", "cph"))
 Description: Tracks which scripts produced which output files by maintaining a
-    YAML registry. Two functions cover the full workflow: register_script()
-    records metadata at the top of a script, and record_output() wraps any
-    save call to log the output path.
+    YAML registry. Call tinylog_script() once at the top of each script to
+    record metadata, and wrap any save call with tinylog_output() to log the
+    output path. An optional tinylog_dict() captures a data dictionary for
+    each input data frame.
 License: MIT + file LICENSE
+Depends:
+    R (>= 4.1.0)
 Imports:
     yaml
 Encoding: UTF-8

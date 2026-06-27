@@ -34,7 +34,7 @@
   NULL
 }
 
-# Walk up from getwd() — and also from the script's own directory — to find
+# Walk up from getwd() -- and also from the script's own directory -- to find
 # the project root (.Rproj, DESCRIPTION, .here, .git).
 .find_root <- function() {
   starts <- unique(c(getwd(), .script_dir()))
@@ -84,7 +84,7 @@
       lines <- c(lines, paste0("    ", input_name, ":"))
       cols <- dd[[script]][[input_name]]$columns
       if (!is.null(names(cols))) {
-        # sample_values = TRUE: named list — one inline sequence per column
+        # sample_values = TRUE: named list -- one inline sequence per column
         lines <- c(lines, "      columns:")
         for (col_name in names(cols)) {
           vals <- vapply(cols[[col_name]], .yaml_scalar, character(1L))
@@ -114,7 +114,7 @@
 }
 
 .get_current_script_name <- function() {
-  # 1. source() call stack — standard usage
+  # 1. source() call stack -- standard usage
   idx <- which(vapply(sys.calls(), \(x) deparse(x[[1]]) == "source", logical(1)))
   if (length(idx) > 0) {
     frame <- sys.frame(idx[length(idx)])
@@ -156,7 +156,25 @@
 #'   or `"_tinylog_proj.yaml"` if unset. Set `options(tinylog.file = "my_log.yaml")` to
 #'   change it project-wide.
 #'
+#' @returns `name` (the script name), invisibly. Called for its side effect of
+#'   creating or updating the YAML registry file in the project root.
 #' @export
+#'
+#' @examples
+#' \donttest{
+#' tmp <- tempfile()
+#' dir.create(tmp)
+#' writeLines("Version: 1.0", file.path(tmp, "DESCRIPTION"))
+#' old_wd <- setwd(tmp)
+#' tinylog_script(
+#'   data_source    = "data/raw/survey.csv",
+#'   description    = "Clean and reshape survey data",
+#'   name           = "01_clean.R",
+#'   record_runtime = FALSE
+#' )
+#' setwd(old_wd)
+#' unlink(tmp, recursive = TRUE)
+#' }
 tinylog_script <- function(data_source,
                              description,
                              name = .get_current_script_name(),
@@ -216,7 +234,7 @@ tinylog_script <- function(data_source,
     idx <- which(vapply(sys.calls(), \(x) deparse(x[[1]]) == "source", logical(1)))
     if (length(idx) == 0L) {
       if (.in_knitr()) {
-        # Track runtime via knitr document hook — fires after all chunks complete
+        # Track runtime via knitr document hook -- fires after all chunks complete
         .old_hook <- knitr::knit_hooks$get("document")
         knitr::knit_hooks$set(document = local({
           start    <- .start_sec
@@ -239,7 +257,7 @@ tinylog_script <- function(data_source,
           }
         }))
       } else {
-        message("runtime tracking requires source() — run via source(here(\"scripts/", name, "\")) to record elapsed time")
+        message("runtime tracking requires source() -- run via source(here(\"scripts/", name, "\")) to record elapsed time")
 
       }
     } else {
@@ -293,9 +311,15 @@ tl_script <- tinylog_script
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' ggsave(filename = tinylog_output(here::here("typst/plots/my_plot.png")))
-#' write.csv(tab, file = tinylog_output(here::here("data/misc/summary.csv")))
+#' \donttest{
+#' tmp <- tempfile()
+#' dir.create(tmp)
+#' writeLines("Version: 1.0", file.path(tmp, "DESCRIPTION"))
+#' old_wd <- setwd(tmp)
+#' tinylog_script("raw/data.csv", "example script", name = "script.R", record_runtime = FALSE)
+#' out <- tinylog_output(file.path(tmp, "output.csv"))
+#' setwd(old_wd)
+#' unlink(tmp, recursive = TRUE)
 #' }
 tinylog_output <- function(file) {
   registry_path <- .registry_path()
@@ -351,12 +375,19 @@ tl_output <- tinylog_output
 #' @param sample_string_length Integer or `Inf`. Maximum characters per sample value before truncating with `"..."`. Default `18L`.
 #'
 #' @return `df`, invisibly.
+#' @importFrom utils head
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' dat <- read.csv(here::here("data/raw/file.csv")) |> tinylog_dict()
-#' dat <- readRDS(here::here("data/clean/file.rds")) |> tinylog_dict(.name = "occupation")
+#' \donttest{
+#' tmp <- tempfile()
+#' dir.create(tmp)
+#' writeLines("Version: 1.0", file.path(tmp, "DESCRIPTION"))
+#' old_wd <- setwd(tmp)
+#' tinylog_script("raw/data.csv", "example script", name = "script.R", record_runtime = FALSE)
+#' dat <- mtcars |> tinylog_dict(.name = "cars")
+#' setwd(old_wd)
+#' unlink(tmp, recursive = TRUE)
 #' }
 tinylog_dict <- function(df, .name = NULL, sample_values = TRUE, sample_string_length = 18L) {
   script_name <- getOption(".tinylog_current_script")
@@ -388,7 +419,7 @@ tinylog_dict <- function(df, .name = NULL, sample_values = TRUE, sample_string_l
   if (!is.null(registry$data_dictionary[[script_name]][[name]])) {
     warning(
       "tinylog_dict(): '", name, "' already recorded for '", script_name,
-      "' — overwriting. Rename the data frame or use .name to distinguish stages.",
+      "' -- overwriting. Rename the data frame or use .name to distinguish stages.",
       call. = FALSE
     )
   }
