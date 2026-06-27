@@ -385,6 +385,13 @@ tinylog_dict <- function(df, .name = NULL, sample_values = TRUE, sample_string_l
     paste0("input_", n + 1L)
   }
 
+  if (!is.null(registry$data_dictionary[[script_name]][[name]])) {
+    base <- name
+    i <- 2L
+    while (!is.null(registry$data_dictionary[[script_name]][[paste0(base, "_", i)]])) i <- i + 1L
+    name <- paste0(base, "_", i)
+  }
+
   clip <- function(v) {
     if (!(is.character(v) || is.factor(v))) return(v)
     s <- as.character(v)
