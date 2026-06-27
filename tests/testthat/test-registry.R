@@ -109,7 +109,7 @@ test_that("tinylog_dict() warns and overwrites on duplicate df name", {
 
   dat <- data.frame(x = 1:3)
   dat |> tinylog_dict()
-  expect_warning(dat |> tinylog_dict(), "overwriting")
+  expect_warning(dat |> tinylog_dict(), "Rename the data frame")
 
   reg <- yaml::read_yaml("_tinylog_proj.yaml")
   entries <- names(reg$data_dictionary[["test.R"]])

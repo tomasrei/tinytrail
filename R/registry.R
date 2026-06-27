@@ -388,8 +388,7 @@ tinylog_dict <- function(df, .name = NULL, sample_values = TRUE, sample_string_l
   if (!is.null(registry$data_dictionary[[script_name]][[name]])) {
     warning(
       "tinylog_dict(): '", name, "' already recorded for '", script_name,
-      "' — overwriting. Use .name to distinguish stages (e.g. .name = \"",
-      name, "_clean\").",
+      "' — overwriting. Rename the data frame or use .name to distinguish stages.",
       call. = FALSE
     )
   }
