@@ -51,25 +51,25 @@
 }
 
 .registry_path <- function() {
-  getOption(".tinylog_registry_path") %||%
-    file.path(.find_root(), "_tinylog.yaml")
+  getOption(".tinytrail_registry_path") %||%
+    file.path(.find_root(), "_tinytrail.yaml")
 }
 
-.warn_no_tinylog <- function(nm, rp) {
+.warn_no_tinytrail <- function(nm, rp) {
   reg <- if (file.exists(rp)) yaml::read_yaml(rp) else
     list(`$version` = "0.1.0",
-         `$learn_more` = "https://github.com/tomasrei/tinylog",
+         `$learn_more` = "https://github.com/tomasrei/tinytrail",
          scripts = list())
   reg$scripts[[nm]] <- list(
     warning = paste0(
-      "Did you forget to add tinylog() at the top of '", nm, "'? ",
-      "Outputs and data dictionary entries will not be recorded until tinylog() is called."
+      "Did you forget to add tinytrail() at the top of '", nm, "'? ",
+      "Outputs and data dictionary entries will not be recorded until tinytrail() is called."
     )
   )
   .write_registry(reg, rp)
-  if (!isTRUE(getOption(".tinylog_warned"))) {
-    message("tinylog: warning written to ", rp)
-    options(.tinylog_warned = TRUE)
+  if (!isTRUE(getOption(".tinytrail_warned"))) {
+    message("tinytrail: warning written to ", rp)
+    options(.tinytrail_warned = TRUE)
   }
 }
 
@@ -155,24 +155,20 @@
   NULL
 }
 
-#' Register a script in the project registry
+#' Register a script in the project trail
 #'
-#' Call once near the top of every script, after sourcing this package.
-#' Creates or updates an entry in `_registry.yaml` and sets the script name
-#' so that [tinylog_output()] can associate outputs with it.
-#'
-#' `tinylog_script()` and `tl_script()` are deprecated aliases kept for
-#' backward compatibility.
+#' Call once near the top of every script. Creates or updates an entry in
+#' `_tinytrail.yaml` and sets the script name so that [tinytrail_write()] can
+#' associate outputs with it.
 #'
 #' @param data_source Character. The input data this script reads (path or description).
 #' @param description Character. One-line description of what the script does.
 #' @param name Character. Script name. Detected automatically when run via `source()`.
-#' @param pin_to_top Logical. Pin this script to the top of the registry. Default `FALSE`.
+#' @param pin_to_top Logical. Pin this script to the top of the trail. Default `FALSE`.
 #' @param record_runtime Logical. Record elapsed time on exit. Default `TRUE`.
 #'
 #' @returns `name` (the script name), invisibly. Called for its side effect of
-#'   creating or updating the YAML registry file in the project root.
-#' @param ... Arguments passed to [tinylog()] (deprecated aliases only).
+#'   creating or updating the YAML trail file in the project root.
 #' @export
 #'
 #' @examples
@@ -181,7 +177,7 @@
 #' dir.create(tmp)
 #' writeLines("Version: 1.0", file.path(tmp, "DESCRIPTION"))
 #' old_wd <- setwd(tmp)
-#' tinylog(
+#' tinytrail(
 #'   data_source    = "data/raw/survey.csv",
 #'   description    = "Clean and reshape survey data",
 #'   name           = "01_clean.R",
@@ -190,25 +186,25 @@
 #' setwd(old_wd)
 #' unlink(tmp, recursive = TRUE)
 #' }
-tinylog <- function(data_source,
-                             description,
-                             name = .get_current_script_name(),
-                             pin_to_top = FALSE,
-                             record_runtime = TRUE) {
+tinytrail <- function(data_source,
+                      description,
+                      name = .get_current_script_name(),
+                      pin_to_top = FALSE,
+                      record_runtime = TRUE) {
   if (is.null(name)) {
-    message("tinylog_script: could not detect script name; run via source() or pass name= explicitly")
+    message("tinytrail: could not detect script name; run via source() or pass name= explicitly")
     return(invisible(NULL))
   }
 
   registry_path <- .registry_path()
-  options(.tinylog_registry_path = registry_path)
+  options(.tinytrail_registry_path = registry_path)
 
   if (file.exists(registry_path)) {
     registry <- yaml::read_yaml(registry_path)
   } else {
     registry <- list(
       `$version`    = "0.1.0",
-      `$learn_more` = "https://github.com/tomasrei/tinylog",
+      `$learn_more` = "https://github.com/tomasrei/tinytrail",
       scripts       = list()
     )
   }
@@ -227,7 +223,7 @@ tinylog <- function(data_source,
 
   if (sample(20L, 1L) == 1L) {
     message(
-      "tinylog tip: place tinylog() at the very top of '", name, "' ",
+      "tinytrail tip: place tinytrail() at the very top of '", name, "' ",
       "(before library() calls) so the runtime covers the full script, not just the code after it."
     )
   }
@@ -238,7 +234,7 @@ tinylog <- function(data_source,
   registry$scripts <- lapply(registry$scripts[c(pinned, rest)], .order_registry_entry)
   .write_registry(registry, registry_path)
 
-  options(.tinylog_current_script = name)
+  options(.tinytrail_current_script = name)
 
   if (record_runtime) {
     .start_sec <- as.numeric(Sys.time())
@@ -248,7 +244,6 @@ tinylog <- function(data_source,
     idx <- which(vapply(sys.calls(), \(x) deparse(x[[1]]) == "source", logical(1)))
     if (length(idx) == 0L) {
       if (.in_knitr()) {
-        # Track runtime via knitr document hook -- fires after all chunks complete
         .old_hook <- knitr::knit_hooks$get("document")
         knitr::knit_hooks$set(document = local({
           start    <- .start_sec
@@ -272,8 +267,6 @@ tinylog <- function(data_source,
         }))
       } else {
         message("runtime tracking requires source() -- run via source(here(\"scripts/", name, "\")) to record elapsed time")
-
-
       }
     } else {
       .write_runtime <- local({
@@ -306,35 +299,17 @@ tinylog <- function(data_source,
   invisible(name)
 }
 
-#' @rdname tinylog
-#' @export
-tinylog_script <- function(...) {
-  .Deprecated("tinylog")
-  tinylog(...)
-}
-
-#' @rdname tinylog
-#' @export
-tl_script <- function(...) {
-  .Deprecated("tinylog")
-  tinylog(...)
-}
-
-#' Record an output file path in the registry
+#' Record an output file path in the trail
 #'
 #' Wraps the file path argument of any save call. Registers the path under the
-#' current script's registry entry and returns the path unchanged, so it can be
+#' current script's trail entry and returns the path unchanged, so it can be
 #' dropped inline into any save function.
 #'
-#' `tinylog_output()` and `tl_output()` are deprecated aliases kept for
-#' backward compatibility; use `tl_write()` for the short form.
+#' Requires [tinytrail()] to have been called first in the same session.
 #'
-#' Requires [tinylog()] to have been called first in the same session.
-#'
-#' @param file Character. Absolute path to the output file.
+#' @param file Character. Path to the output file.
 #'
 #' @return `file`, invisibly.
-#' @param ... Arguments passed to [tinylog_write()] (deprecated aliases only).
 #' @export
 #'
 #' @examples
@@ -343,16 +318,16 @@ tl_script <- function(...) {
 #' dir.create(tmp)
 #' writeLines("Version: 1.0", file.path(tmp, "DESCRIPTION"))
 #' old_wd <- setwd(tmp)
-#' tinylog("raw/data.csv", "example script", name = "script.R", record_runtime = FALSE)
-#' out <- tinylog_write(file.path(tmp, "output.csv"))
+#' tinytrail("raw/data.csv", "example script", name = "script.R", record_runtime = FALSE)
+#' out <- tinytrail_write(file.path(tmp, "output.csv"))
 #' setwd(old_wd)
 #' unlink(tmp, recursive = TRUE)
 #' }
-tinylog_write <- function(file) {
-  script_name <- getOption(".tinylog_current_script")
+tinytrail_write <- function(file) {
+  script_name <- getOption(".tinytrail_current_script")
 
   if (is.null(script_name)) {
-    .warn_no_tinylog(
+    .warn_no_tinytrail(
       nm = .get_current_script_name() %||% "<unknown script>",
       rp = .registry_path()
     )
@@ -386,39 +361,20 @@ tinylog_write <- function(file) {
   invisible(file)
 }
 
-#' @rdname tinylog_write
-#' @export
-tl_write <- tinylog_write
-
-#' @rdname tinylog_write
-#' @export
-tinylog_output <- function(...) {
-  .Deprecated("tinylog_write")
-  tinylog_write(...)
-}
-
-#' @rdname tinylog_write
-#' @export
-tl_output <- function(...) {
-  .Deprecated("tinylog_write")
-  tinylog_write(...)
-}
-
 #' Add a data frame to the project data dictionary
 #'
 #' Place at the end of a read/clean pipeline to capture column names and
 #' optionally sample values. Returns the data frame unchanged.
 #'
-#' `tl_dict()` is a short alias for `tinylog_dict()`.
-#'
-#' Requires [tinylog_script()] to have been called first in the same session.
+#' Requires [tinytrail()] to have been called first in the same session.
 #'
 #' @param df A data frame.
 #' @param .name Character. Label for this entry. Defaults to the variable name of `df`
-#'   as written in the calling code (e.g. `mtcars |> tinylog_dict()` records as `"mtcars"`).
+#'   as written in the calling code (e.g. `mtcars |> tinytrail_dict()` records as `"mtcars"`).
 #'   Override when the expression is not a simple name or when you need a custom label.
 #' @param sample_values Logical. Record 5 sample values per column. Default `TRUE`.
-#' @param sample_string_length Integer or `Inf`. Maximum characters per sample value before truncating with `"..."`. Default `18L`.
+#' @param sample_string_length Integer or `Inf`. Maximum characters per sample value
+#'   before truncating with `"..."`. Default `18L`.
 #'
 #' @return `df`, invisibly.
 #' @importFrom utils head
@@ -430,16 +386,16 @@ tl_output <- function(...) {
 #' dir.create(tmp)
 #' writeLines("Version: 1.0", file.path(tmp, "DESCRIPTION"))
 #' old_wd <- setwd(tmp)
-#' tinylog("raw/data.csv", "example script", name = "script.R", record_runtime = FALSE)
-#' dat <- mtcars |> tinylog_dict(.name = "cars")
+#' tinytrail("raw/data.csv", "example script", name = "script.R", record_runtime = FALSE)
+#' dat <- mtcars |> tinytrail_dict(.name = "cars")
 #' setwd(old_wd)
 #' unlink(tmp, recursive = TRUE)
 #' }
-tinylog_dict <- function(df, .name = NULL, sample_values = TRUE, sample_string_length = 18L) {
-  script_name <- getOption(".tinylog_current_script")
+tinytrail_dict <- function(df, .name = NULL, sample_values = TRUE, sample_string_length = 18L) {
+  script_name <- getOption(".tinytrail_current_script")
 
   if (is.null(script_name)) {
-    .warn_no_tinylog(
+    .warn_no_tinytrail(
       nm = .get_current_script_name() %||% "<unknown script>",
       rp = .registry_path()
     )
@@ -447,7 +403,7 @@ tinylog_dict <- function(df, .name = NULL, sample_values = TRUE, sample_string_l
   }
 
   if (!is.data.frame(df)) stop(
-    "tinylog_dict() requires a data frame."
+    "tinytrail_dict() requires a data frame."
   )
 
   registry_path <- .registry_path()
@@ -455,8 +411,10 @@ tinylog_dict <- function(df, .name = NULL, sample_values = TRUE, sample_string_l
 
   registry <- yaml::read_yaml(registry_path)
 
-  if (is.null(registry$data_dictionary))                      registry$data_dictionary <- list()
-  if (is.null(registry$data_dictionary[[script_name]]))       registry$data_dictionary[[script_name]] <- list()
+  if (is.null(registry$data_dictionary))
+    registry$data_dictionary <- list()
+  if (is.null(registry$data_dictionary[[script_name]]))
+    registry$data_dictionary[[script_name]] <- list()
 
   auto_name <- deparse(substitute(df))
   name <- if (!is.null(.name)) {
@@ -470,7 +428,7 @@ tinylog_dict <- function(df, .name = NULL, sample_values = TRUE, sample_string_l
 
   if (!is.null(registry$data_dictionary[[script_name]][[name]])) {
     warning(
-      "tinylog_dict(): '", name, "' already recorded for '", script_name,
+      "tinytrail_dict(): '", name, "' already recorded for '", script_name,
       "' -- overwriting. Rename the data frame or use .name to distinguish stages.",
       call. = FALSE
     )
@@ -496,7 +454,3 @@ tinylog_dict <- function(df, .name = NULL, sample_values = TRUE, sample_string_l
 
   invisible(df)
 }
-
-#' @rdname tinylog_dict
-#' @export
-tl_dict <- tinylog_dict

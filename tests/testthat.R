@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(tinylog)
+library(tinytrail)
 
-test_check("tinylog")
+test_check("tinytrail")

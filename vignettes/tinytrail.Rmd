@@ -1,8 +1,8 @@
 ---
-title: "Getting started with tinylog"
+title: "Getting started with tinytrail"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting started with tinylog}
+  %\VignetteIndexEntry{Getting started with tinytrail}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,7 +11,11 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-`tinylog` keeps a YAML registry of which scripts produced which output files
+`tinytrail` is a package that — once initialised — leaves a 'tiny trail' of
+human- and AI-readable text that makes it effortless to keep track of small to
+medium-sized projects. The package is lightweight (hence 'tiny') and ...
+
+`tinytrail` keeps a YAML registry of which scripts produced which output files
 in your project. Place three lightweight calls in each script and the registry
 stays current automatically.
 
@@ -19,56 +23,54 @@ stays current automatically.
 
 | Function | Where to use it |
 |---|---|
-| `tinylog()` | Top of every script |
-| `tinylog_write()` | Inline around any file path you save to |
-| `tinylog_dict()` | After reading/cleaning a data frame |
-
-Short aliases (`tl_write()`, `tl_dict()`) are available for interactive use.
+| `tinytrail()` | Top of every script |
+| `tinytrail_write()` | Inline around any file path you save to |
+| `tinytrail_dict()` | After reading/cleaning a data frame |
 
 ## A minimal workflow
 
 ```{r workflow}
-library(tinylog)
+library(tinytrail)
 
 # --- top of 01_clean.R ---
-tinylog(
+tinytrail(
   data_source = "The Current Population Survey (BLS)",
   description = "Clean and reshape survey data"
 )
 
 # read and clean
 survey <- read.csv("data/raw/survey.csv") |>
-  tinylog_dict()                           # records column names + samples
+  tinytrail_dict()                           # records column names + samples
 
-# save — wrap the file path with tinylog_write()
+# save — wrap the file path with tinytrail_write()
 write.csv(
   survey,
-  file = tinylog_write("data/clean/survey_clean.csv")
+  file = tinytrail_write("data/clean/survey_clean.csv")
 )
 ```
 
-`tinylog_write()` is a thin wrapper that logs the path and returns it unchanged,
+`tinytrail_write()` is a thin wrapper that logs the path and returns it unchanged,
 so it slots directly into the `file =` argument of any write function. It works
 equally well with `here::here()`:
 
 ```{r here}
 write.csv(
   survey,
-  file = tinylog_write(here::here("data/clean/survey_clean.csv"))
+  file = tinytrail_write(here::here("data/clean/survey_clean.csv"))
 )
 ```
 
-That is all you need to add. The registry file (`_tinylog.yaml`) is
+That is all you need to add. The trail file (`_tinytrail.yaml`) is
 created in the project root on the first run and updated on every subsequent
 run.
 
-## The registry file
+## The trail file
 
-After running a few scripts, `_tinylog.yaml` looks like this:
+After running a few scripts, `_tinytrail.yaml` looks like this:
 
 ```yaml
 $version: 0.1.0
-$learn_more: https://github.com/tomasrei/tinylog
+$learn_more: https://github.com/tomasrei/tinytrail
 scripts:
   01_clean.R:
     data_source: data/raw/survey.csv
@@ -100,10 +102,10 @@ data_dictionary:
 
 ## Options
 
-Pin an important script to the top of the registry:
+Pin an important script to the top of the trail:
 
 ```{r pin}
-tinylog(
+tinytrail(
   data_source = "data/raw/master.csv",
   description = "Master data preparation",
   pin_to_top  = TRUE

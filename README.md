@@ -1,41 +1,40 @@
-# tinylog
+# tinytrail
 
-**tinylog** is a lightweight script registry for R projects. It tracks which scripts produced which output files by maintaining a human-readable YAML file (`_tinylog_proj.yaml`) at the project root.
+**tinytrail** is a lightweight R package that — once initialised — leaves a 'tiny trail' of human- and AI-readable text, making it effortless to keep track of small to medium-sized projects. It maintains a YAML trail file (`_tinytrail.yaml`) at the project root recording which scripts produced which output files.
 
 ## Installation
 
 ```r
-# From CRAN:
-install.packages("tinylog")
-
 # Development version from GitHub:
 # install.packages("pak")
-pak::pak("tomasrei/tinylog")
+pak::pak("tomasrei/tinytrail")
 ```
 
 ## Usage
 
-Place `tinylog_script()` once near the top of each script, and wrap save calls with `tinylog_output()`:
+Place `tinytrail()` once near the top of each script, wrap save calls with `tinytrail_write()`, and optionally pipe data frames through `tinytrail_dict()`:
 
 ```r
-library(tinylog)
+library(tinytrail)
 
-tinylog_script(
+tinytrail(
   data_source = "data/raw/survey.csv",
   description = "Clean and reshape survey data"
 )
 
 dat <- read.csv(here::here("data/raw/survey.csv")) |>
-  tinylog_dict()
+  tinytrail_dict()
 
 # ... processing ...
 
-write.csv(dat, file = tinylog_output(here::here("data/clean/survey_clean.csv")))
+write.csv(dat, file = tinytrail_write(here::here("data/clean/survey_clean.csv")))
 ```
 
-This creates or updates `_tinylog_proj.yaml`:
+This creates or updates `_tinytrail.yaml`:
 
 ```yaml
+$version: 0.1.0
+$learn_more: https://github.com/tomasrei/tinytrail
 scripts:
   01_clean.R:
     data_source: data/raw/survey.csv
@@ -47,11 +46,3 @@ scripts:
     outputs:
     - data/clean/survey_clean.csv
 ```
-
-## Short aliases
-
-`tl_script()`, `tl_output()`, and `tl_dict()` are short aliases for interactive use.
-
-## Options
-
-Set `options(tinylog.file = "my_log.yaml")` to change the registry filename project-wide.
