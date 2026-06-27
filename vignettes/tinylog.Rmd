@@ -32,7 +32,7 @@ library(tinylog)
 
 # --- top of 01_clean.R ---
 tinylog(
-  data_source = "data/raw/survey.csv",
+  data_source = "The Current Population Survey (BLS)",
   description = "Clean and reshape survey data"
 )
 
@@ -40,17 +40,31 @@ tinylog(
 survey <- read.csv("data/raw/survey.csv") |>
   tinylog_dict()                           # records column names + samples
 
-# save — wrap the file path with tinylog_output()
-write.csv(survey, tinylog_write("data/clean/survey_clean.csv"))
+# save — wrap the file path with tinylog_write()
+write.csv(
+  survey,
+  file = tinylog_write("data/clean/survey_clean.csv")
+)
 ```
 
-That is all you need to add. The registry file (`_tinylog_proj.yaml`) is
+`tinylog_write()` is a thin wrapper that logs the path and returns it unchanged,
+so it slots directly into the `file =` argument of any write function. It works
+equally well with `here::here()`:
+
+```{r here}
+write.csv(
+  survey,
+  file = tinylog_write(here::here("data/clean/survey_clean.csv"))
+)
+```
+
+That is all you need to add. The registry file (`_tinylog.yaml`) is
 created in the project root on the first run and updated on every subsequent
 run.
 
 ## The registry file
 
-After running a few scripts the registry looks like this:
+After running a few scripts, `_tinylog.yaml` looks like this:
 
 ```yaml
 $version: 0.1.0
