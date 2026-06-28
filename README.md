@@ -1,5 +1,7 @@
 # tinytrail
 
+<img src="man/figures/trail_sketch.png" width="100%" alt="A pencil sketch of an alpine landscape with winding trails"/>
+
 **tinytrail** is a lightweight R package that — once initialized — leaves a 'tiny trail' of human- and AI-readable text, making it effortless to keep track of small to medium-sized projects. It maintains a YAML trail file (`_tinytrail.yaml`) at the project root recording which scripts produced which output files.
 
 ## Installation
