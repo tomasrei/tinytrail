@@ -187,7 +187,7 @@ test_that("tinytrail_dict() respects sample_string_length = Inf", {
   expect_equal(nchar(val), 100L)
 })
 
-test_that("n_files is correct after lapply over multiple outputs", {
+test_that("n_outputs is correct after lapply over multiple outputs", {
   tmp <- withr::local_tempdir()
   withr::local_dir(tmp)
   withr::local_options(.tinytrail_current_script = NULL, .tinytrail_registry_path = NULL)
@@ -203,11 +203,11 @@ test_that("n_files is correct after lapply over multiple outputs", {
   lapply(paths, tinytrail_write)
 
   reg <- yaml::read_yaml("_tinytrail.yaml")
-  expect_equal(reg$scripts[["test.R"]]$n_files, 3L)
+  expect_equal(reg$scripts[["test.R"]]$n_outputs, 3L)
   expect_length(reg$scripts[["test.R"]]$outputs, 3L)
 })
 
-test_that("n_files is correct after purrr::map over multiple outputs", {
+test_that("n_outputs is correct after purrr::map over multiple outputs", {
   skip_if_not_installed("purrr")
   tmp <- withr::local_tempdir()
   withr::local_dir(tmp)
@@ -224,7 +224,7 @@ test_that("n_files is correct after purrr::map over multiple outputs", {
   purrr::map(paths, tinytrail_write)
 
   reg <- yaml::read_yaml("_tinytrail.yaml")
-  expect_equal(reg$scripts[["test.R"]]$n_files, 3L)
+  expect_equal(reg$scripts[["test.R"]]$n_outputs, 3L)
   expect_length(reg$scripts[["test.R"]]$outputs, 3L)
 })
 
@@ -250,7 +250,7 @@ test_that("all three functions work together without source() (simple_main scena
 
   reg <- yaml::read_yaml("_tinytrail.yaml")
 
-  expect_equal(reg$scripts[["simple_main.R"]]$n_files, 1L)
+  expect_equal(reg$scripts[["simple_main.R"]]$n_outputs, 1L)
   expect_length(reg$data_dictionary[["simple_main.R"]][["mtcars"]]$columns$mpg, 5L)
   expect_length(reg$data_dictionary[["simple_main.R"]][["dat"]]$columns$mpg, 5L)
   expect_true(!is.null(reg$data_dictionary[["simple_main.R"]][["dat"]]$columns$efficiency_class))

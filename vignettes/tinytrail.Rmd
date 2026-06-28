@@ -76,7 +76,7 @@ scripts:
     first_run: '2026-01-15 09:12'
     latest_run: '2026-01-20 11:05'
     script_runtime: 0.3 min
-    n_files: 1
+    n_outputs: 1
     outputs:
     - data/clean/survey_clean.csv
   02_model.R:
@@ -85,7 +85,7 @@ scripts:
     first_run: '2026-01-16 14:22'
     latest_run: '2026-01-20 11:08'
     script_runtime: 1.4 min
-    n_files: 2
+    n_outputs: 2
     outputs:
     - results/model_fit.rds
     - results/table_coefficients.csv

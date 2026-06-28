@@ -39,7 +39,7 @@ scripts:
     first_run: '2026-06-27 09:00'
     latest_run: '2026-06-27 09:01'
     script_runtime: 0.1 min
-    n_files: 1
+    n_outputs: 1
     outputs:
     - data/clean/survey_clean.csv
 ```

@@ -10,4 +10,4 @@
 .SENSITIVITY_PREFIX <- "sensitivity_"  # output filename prefix that sorts last
 .REGISTRY_FILENAME  <- "_tinytrail.yaml"
 .KEY_ORDER          <- c("description", "data_source", "first_run",
-                         "latest_run", "script_runtime", "n_files", "outputs")
+                         "latest_run", "script_runtime", "n_outputs", "outputs")

@@ -217,7 +217,7 @@ tinytrail_write <- function(file) {
                            basename(all_out))]
 
   registry$scripts[[script_name]]$outputs <- outputs
-  registry$scripts[[script_name]]$n_files <- length(outputs)
+  registry$scripts[[script_name]]$n_outputs <- length(outputs)
   registry$scripts <- lapply(registry$scripts, .order_registry_entry)
   .write_registry(registry, registry_path)
 
