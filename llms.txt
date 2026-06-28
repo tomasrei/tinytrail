@@ -2,8 +2,8 @@
 
 **tinytrail** is a lightweight R package that — once initialized —
 leaves a ‘tiny trail’ of human- and AI-readable information about what
-each script produces, making it effortless to keep better track of small
-to medium-sized projects. It maintains a YAML trail file
+each script saves to disk, making it effortless to keep better track of
+small to medium-sized projects. It maintains a YAML trail file
 (`_tinytrail.yaml`) at the project root recording which scripts produced
 which output files and each script’s runtime. The tinytrail package also
 provides a convenience function that effortlessly registers column names
@@ -117,6 +117,8 @@ trails](reference/figures/trail_sketch.png)
 
 - [`tinytrail()`](https://tinytrail-r.github.io/tinytrail/reference/tinytrail.md)
   : Register a script in the project trail
+- [`tinytrail_auto()`](https://tinytrail-r.github.io/tinytrail/reference/tinytrail_auto.md)
+  : Register a script and automatically track all write/save calls
 - [`tinytrail_dict()`](https://tinytrail-r.github.io/tinytrail/reference/tinytrail_dict.md)
   : Add a data frame to the project data dictionary
 - [`tinytrail_write()`](https://tinytrail-r.github.io/tinytrail/reference/tinytrail_write.md)
