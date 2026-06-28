@@ -12,18 +12,15 @@ pak::pak("tomasrei/tinytrail")
 
 ## Usage
 
-Place `tinytrail()` once near the top of each script, wrap save calls with `tinytrail_write()`, and optionally pipe data frames through `tinytrail_dict()`:
+Place `tinytrail()` once near the top of each script and wrap save calls with `tinytrail_write()`:
 
 ```r
 library(tinytrail)
 
 tinytrail(
-  data_source = "Current Population Survey (BLS)",
-  description = "Clean and reshape survey data"
+  description = "Clean and reshape survey data",
+  data_source = "Current Population Survey (BLS)"
 )
-
-dat <- read.csv("data/raw/survey.csv") |>
-  tinytrail_dict()
 
 # ... processing ...
 
@@ -37,12 +34,31 @@ $version: 0.1.0
 $learn_more: https://github.com/tomasrei/tinytrail
 scripts:
   01_clean.R:
-    data_source: Current Population Survey (BLS)
     description: Clean and reshape survey data
+    data_source: Current Population Survey (BLS)
     first_run: '2026-06-27 09:00'
     latest_run: '2026-06-27 09:01'
     script_runtime: 0.1 min
     n_files: 1
     outputs:
     - data/clean/survey_clean.csv
+```
+
+Optionally, pipe data frames through `tinytrail_dict()` to capture column names and sample values:
+
+```r
+dat <- read.csv("data/raw/survey.csv") |>
+  tinytrail_dict()
+```
+
+This adds a data dictionary entry to `_tinytrail.yaml`:
+
+```yaml
+data_dictionary:
+  01_clean.R:
+    dat:
+      columns:
+        id: [1, 2, 3, 4, 5]
+        age: [34, 52, 28, 41, 37]
+        response: ['yes', 'no', 'yes', 'yes', 'no']
 ```
