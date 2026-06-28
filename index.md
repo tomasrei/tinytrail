@@ -1,8 +1,5 @@
 # tinytrail
 
-![A pencil sketch of an alpine landscape with winding
-trails](reference/figures/trail_sketch.png)
-
 **tinytrail** is a lightweight R package that — once initialized —
 leaves a ‘tiny trail’ of human- and AI-readable text, making it
 effortless to keep track of small to medium-sized projects. It maintains
@@ -77,3 +74,6 @@ data_dictionary:
         age: [34, 52, 28, 41, 37]
         response: ['yes', 'no', 'yes', 'yes', 'no']
 ```
+
+![A pencil sketch of an alpine landscape with winding
+trails](reference/figures/trail_sketch.png)
