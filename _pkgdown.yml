@@ -1,4 +1,8 @@
 url: https://tinytrail-r.github.io/tinytrail/
 template:
   bootstrap: 5
+  bootswatch: flatly
+  light-switch: false
+  bslib:
+    navbar-bg: "body-tertiary"
 
