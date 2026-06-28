@@ -26,17 +26,18 @@ tinytrail(
 
 dat <- read.csv("data/raw/survey.csv") 
 
-# ... analysis ...
 
-plot <- ggplot(dat, aes(x = age, fill = response)) +
-  geom_histogram()
-
-plot |> 
+# wrap the path with tinytrail_write() to register the output
+ggplot(dat) +
+  aes(x = age, fill = response) +
+  geom_histogram() |>
   ggsave(file = tinytrail_write("output/fig1.tex"))
 
-fit <- lm(age ~ response, data = dat)
-
-tt(coef(summary(fit)), digits = 3) |>
+# same for tables
+lm(age ~ response, data = dat) |>
+  summary() |>
+  coef() |>
+  tt(digits = 3) |>
   save_tt(file = tinytrail_write("output/tab1.tex"))
 ```
 
