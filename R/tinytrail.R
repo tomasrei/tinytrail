@@ -188,12 +188,16 @@ tinytrail <- function(description,
 
   if (auto) {
     .setup_write_hooks(extra = extra_hooks)
-    teardown_ <- .teardown_write_hooks
-    do.call(
-      on.exit,
-      list(bquote((.(teardown_))()), add = TRUE, after = TRUE),
-      envir = parent.frame()
-    )
+    source_idx <- which(vapply(sys.calls(), \(x) deparse(x[[1]]) == "source", logical(1)))
+    if (length(source_idx) > 0L) {
+      teardown_ <- .teardown_write_hooks
+      do.call(
+        on.exit,
+        list(bquote((.(teardown_))()), add = TRUE, after = TRUE),
+        envir = sys.frame(source_idx[length(source_idx)])
+      )
+    }
+    # Rscript / interactive: hooks stay active until R exits — no teardown needed
   }
 
   invisible(name)

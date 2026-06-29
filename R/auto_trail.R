@@ -34,14 +34,20 @@
   }
 }
 
+# Returns the environment to trace in for a given package.
+# Prefers the attached package env (intercepts fn() search-path calls).
+# Falls back to namespace when the package is not attached (intercepts pkg::fn() calls).
+.trace_env <- function(pkg) {
+  if (is.null(pkg)) return(globalenv())
+  if (!requireNamespace(pkg, quietly = TRUE)) return(NULL)
+  pkg_env_name <- paste0("package:", pkg)
+  if (pkg_env_name %in% search()) as.environment(pkg_env_name) else asNamespace(pkg)
+}
+
 # Traces a single function. Returns TRUE on success, FALSE if unavailable.
 .hook_one <- function(fn_name, pkg, arg) {
-  ns <- if (!is.null(pkg)) {
-    if (!requireNamespace(pkg, quietly = TRUE)) return(FALSE)
-    asNamespace(pkg)
-  } else {
-    globalenv()
-  }
+  where <- .trace_env(pkg)
+  if (is.null(where)) return(FALSE)
 
   tracer <- bquote(
     tryCatch({
@@ -54,7 +60,7 @@
   )
 
   tryCatch(
-    { suppressMessages(trace(fn_name, tracer = tracer, print = FALSE, where = ns)); TRUE },
+    { suppressMessages(trace(fn_name, tracer = tracer, print = FALSE, where = where)); TRUE },
     error = function(e) FALSE
   )
 }
@@ -88,13 +94,9 @@
   for (key in traced) {
     spec <- hooks[[key]]
     if (is.null(spec)) next
-    ns <- if (!is.null(spec$pkg)) {
-      tryCatch(asNamespace(spec$pkg), error = function(e) NULL)
-    } else {
-      globalenv()
-    }
-    if (!is.null(ns))
-      tryCatch(suppressMessages(untrace(spec$fn, where = ns)), error = function(e) NULL)
+    where <- tryCatch(.trace_env(spec$pkg), error = function(e) NULL)
+    if (!is.null(where))
+      tryCatch(suppressMessages(untrace(spec$fn, where = where)), error = function(e) NULL)
   }
   options(.tinytrail_traced_fns  = NULL,
           .tinytrail_hooks_table = NULL)
