@@ -116,8 +116,5 @@ withr::with_tempdir({
     )
   })
 })
-#> Warning: RGL: unable to open X11 display
-#> Warning: 'rgl.init' failed, will use the null device.
-#> See '?rgl.useNULL' for ways to avoid this warning.
 # }
 ```
