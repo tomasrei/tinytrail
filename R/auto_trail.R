@@ -73,7 +73,12 @@
 # Falls back to namespace when the package is not attached (intercepts pkg::fn() calls).
 .trace_env <- function(pkg) {
   if (is.null(pkg)) return(globalenv())
-  if (!requireNamespace(pkg, quietly = TRUE)) return(NULL)
+  if (identical(pkg, "rgl") && !isNamespaceLoaded("rgl")) {
+    old <- getOption("rgl.useNULL")
+    options(rgl.useNULL = TRUE)
+    on.exit(options(rgl.useNULL = old), add = TRUE)
+  }
+  if (!suppressWarnings(requireNamespace(pkg, quietly = TRUE))) return(NULL)
   pkg_env_name <- paste0("package:", pkg)
   if (pkg_env_name %in% search()) as.environment(pkg_env_name) else asNamespace(pkg)
 }
