@@ -21,7 +21,41 @@
   write_dta     = list(fn = "write_dta",     pkg = "haven",      arg = "path"),
   write_sas     = list(fn = "write_sas",     pkg = "haven",      arg = "path"),
   write_json    = list(fn = "write_json",    pkg = "jsonlite",   arg = "path"),
-  fwrite        = list(fn = "fwrite",        pkg = "data.table", arg = "file")
+  fwrite        = list(fn = "fwrite",        pkg = "data.table", arg = "file"),
+  save_tt       = list(fn = "save_tt",       pkg = "tinytable",  arg = "output"),
+  write_yaml    = list(fn = "write_yaml",    pkg = "yaml",       arg = "file"),
+  save_kable    = list(fn = "save_kable",    pkg = "kableExtra", arg = "file"),
+  st_write      = list(fn = "st_write",      pkg = "sf",         arg = "dsn"),
+  write_xml     = list(fn = "write_xml",     pkg = "xml2",       arg = "file"),
+  snapshot3d    = list(fn = "snapshot3d",    pkg = "rgl",        arg = "filename"),
+  # grDevices — base R graphics devices (C-backed, path set at device open)
+  png           = list(fn = "png",           pkg = "grDevices",  arg = "filename"),
+  jpeg          = list(fn = "jpeg",          pkg = "grDevices",  arg = "filename"),
+  tiff          = list(fn = "tiff",          pkg = "grDevices",  arg = "filename"),
+  bmp           = list(fn = "bmp",           pkg = "grDevices",  arg = "filename"),
+  pdf           = list(fn = "pdf",           pkg = "grDevices",  arg = "file"),
+  cairo_pdf     = list(fn = "cairo_pdf",     pkg = "grDevices",  arg = "filename"),
+  svg           = list(fn = "svg",           pkg = "grDevices",  arg = "filename"),
+  postscript    = list(fn = "postscript",    pkg = "grDevices",  arg = "file"),
+  # officer — Word / PowerPoint / RTF (XML+zip, not base R)
+  print.rdocx   = list(fn = "print.rdocx",  pkg = "officer",    arg = "target"),
+  print.rpptx   = list(fn = "print.rpptx",  pkg = "officer",    arg = "target"),
+  print.rtf     = list(fn = "print.rtf",    pkg = "officer",    arg = "target"),
+  # images
+  image_write   = list(fn = "image_write",  pkg = "magick",     arg = "path"),
+  save.image    = list(fn = "save.image",   pkg = "imager",     arg = "file"),
+  svglite       = list(fn = "svglite",      pkg = "svglite",    arg = "filename"),
+  dml           = list(fn = "dml",          pkg = "rvg",        arg = "file"),
+  # geospatial
+  writeRaster   = list(fn = "writeRaster",  pkg = "terra",      arg = "filename"),
+  writeVector   = list(fn = "writeVector",  pkg = "terra",      arg = "filename"),
+  write_stars   = list(fn = "write_stars",  pkg = "stars",      arg = "dsn"),
+  # fast serialisation
+  write_fst     = list(fn = "write_fst",    pkg = "fst",        arg = "path"),
+  # office (xlsx v2)
+  wb_save       = list(fn = "wb_save",      pkg = "openxlsx2",  arg = "file"),
+  # web / widgets
+  saveWidget    = list(fn = "saveWidget",   pkg = "htmlwidgets", arg = "file")
 )
 
 # Parses "pkg::fn" or "fn" from an extra_hooks entry into a spec list.

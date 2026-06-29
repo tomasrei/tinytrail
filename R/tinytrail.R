@@ -239,29 +239,33 @@ tinytrail_write <- function(file) {
     return(invisible(file))
   }
 
-  registry_path <- .registry_path()
-  if (!file.exists(registry_path)) return(invisible(file))
+  tryCatch({
+    registry_path <- .registry_path()
+    if (!file.exists(registry_path)) return(invisible(file))
 
-  root     <- .find_root()
-  rel_file <- if (startsWith(file, root)) substring(file, nchar(root) + 2L) else file
+    root     <- .find_root()
+    rel_file <- if (startsWith(file, root)) substring(file, nchar(root) + 2L) else file
 
-  registry     <- yaml::read_yaml(registry_path)
-  existing_raw <- registry$scripts[[script_name]]$outputs %||% list()
-  existing <- if (identical(existing_raw, "none") || length(existing_raw) == 0) {
-    character(0)
-  } else {
-    as.character(unlist(existing_raw))
-  }
+    registry     <- yaml::read_yaml(registry_path)
+    existing_raw <- registry$scripts[[script_name]]$outputs %||% list()
+    existing <- if (identical(existing_raw, "none") || length(existing_raw) == 0) {
+      character(0)
+    } else {
+      as.character(unlist(existing_raw))
+    }
 
-  all_out <- unique(c(existing, rel_file))
-  outputs <- all_out[order(dirname(all_out),
-                           startsWith(basename(all_out), .SENSITIVITY_PREFIX),
-                           basename(all_out))]
+    all_out <- unique(c(existing, rel_file))
+    outputs <- all_out[order(dirname(all_out),
+                             startsWith(basename(all_out), .SENSITIVITY_PREFIX),
+                             basename(all_out))]
 
-  registry$scripts[[script_name]]$outputs <- outputs
-  registry$scripts[[script_name]]$n_outputs <- length(outputs)
-  registry$scripts <- lapply(registry$scripts, .order_registry_entry)
-  .write_registry(registry, registry_path)
+    registry$scripts[[script_name]]$outputs <- outputs
+    registry$scripts[[script_name]]$n_outputs <- length(outputs)
+    registry$scripts <- lapply(registry$scripts, .order_registry_entry)
+    .write_registry(registry, registry_path)
+  }, error = function(e) {
+    message("tinytrail: could not record '", basename(file), "': ", conditionMessage(e))
+  })
 
   invisible(file)
 }

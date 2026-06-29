@@ -22,11 +22,35 @@ RoxygenNote: 8.0.0
 URL: https://github.com/tinytrail-r/tinytrail, https://tinytrail-r.github.io/tinytrail/
 BugReports: https://github.com/tinytrail-r/tinytrail/issues
 Suggests:
+    arrow,
+    data.table,
+    fst,
+    ggplot2,
+    haven,
+    htmlwidgets,
+    imager,
+    jsonlite,
+    kableExtra,
     knitr,
+    leaflet,
+    magick,
+    officer,
+    openxlsx,
+    openxlsx2,
     purrr,
+    readr,
+    rgl,
     rmarkdown,
     rstudioapi,
+    rvg,
+    sf,
+    stars,
+    svglite,
+    terra,
     testthat (>= 3.0.0),
-    withr
+    tinytable,
+    withr,
+    writexl,
+    xml2
 VignetteBuilder: knitr
 Config/testthat/edition: 3
