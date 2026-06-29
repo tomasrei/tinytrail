@@ -2,7 +2,7 @@
 
 ## Authors
 
-- **Tomas Reivinger**. Author, maintainer.
+- **Tomas Reivinger**. Author, maintainer, copyright holder.
 
 ## Citation
 

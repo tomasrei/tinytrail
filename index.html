@@ -55,51 +55,42 @@
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Development version from GitHub:</span></span>
-<span><span class="co"># install.packages("pak")</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"tinytrail"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Development version from GitHub:</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"tinytrail-r/tinytrail"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
 </h2>
-<p>Place <code><a href="reference/tinytrail.html">tinytrail()</a></code> once near the top of each script and wrap save calls with <code><a href="reference/tinytrail_write.html">tinytrail_write()</a></code>:</p>
+<p>Call <code><a href="reference/tinytrail.html">tinytrail()</a></code> once near the top of each script. Common write functions are intercepted automatically:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tinytrail-r/tinytrail" class="external-link">tinytrail</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://vincentarelbundock.github.io/tinytable/" class="external-link">tinytable</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/tinytrail.html">tinytrail</a></span><span class="op">(</span></span>
-<span>  description <span class="op">=</span> <span class="st">"Summarise survey responses by age group"</span>,</span>
+<span>  description <span class="op">=</span> <span class="st">"Clean and summarise survey data"</span>,</span>
 <span>  data_source <span class="op">=</span> <span class="st">"Current Population Survey (BLS)"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/raw/survey.csv"</span><span class="op">)</span> </span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/raw/survey.csv"</span><span class="op">)</span></span>
 <span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">dat</span>, <span class="st">"output/clean.csv"</span><span class="op">)</span>   <span class="co"># auto-tracked</span></span>
 <span></span>
-<span><span class="co"># wrap the path with tinytrail_write() to register the output</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">age</span>, fill <span class="op">=</span> <span class="va">response</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html" class="external-link">geom_histogram</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html" class="external-link">ggsave</a></span><span class="op">(</span>file <span class="op">=</span> <span class="fu"><a href="reference/tinytrail_write.html">tinytrail_write</a></span><span class="op">(</span><span class="st">"output/fig1.tex"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># same for tables</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">age</span> <span class="op">~</span> <span class="va">response</span>, data <span class="op">=</span> <span class="va">dat</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://vincentarelbundock.github.io/tinytable/man/tt.html" class="external-link">tt</a></span><span class="op">(</span>digits <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://vincentarelbundock.github.io/tinytable/man/save_tt.html" class="external-link">save_tt</a></span><span class="op">(</span>file <span class="op">=</span> <span class="fu"><a href="reference/tinytrail_write.html">tinytrail_write</a></span><span class="op">(</span><span class="st">"output/tab1.tex"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="reference/tinytrail.html">tinytrail()</a></code> automatically captures the file name and creates or updates <code>_tinytrail.yaml</code>:</p>
+<span><span class="fu"><a href="https://rdrr.io/r/grDevices/png.html" class="external-link">png</a></span><span class="op">(</span><span class="st">"output/age_dist.png"</span><span class="op">)</span>           <span class="co"># auto-tracked</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">age</span>, main <span class="op">=</span> <span class="st">"Age distribution"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/grDevices/dev.html" class="external-link">dev.off</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="reference/tinytrail.html">tinytrail()</a></code> detects the script name and creates or updates <code>_tinytrail.yaml</code>:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">scripts</span><span class="kw">:</span></span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="at">  </span><span class="fu">01_clean.R</span><span class="kw">:</span></span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Summarise survey responses by age group</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Clean and summarise survey data</span></span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="at">    </span><span class="fu">data_source</span><span class="kw">:</span><span class="at"> Current Population Survey (BLS)</span></span>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="at">    </span><span class="fu">first_run</span><span class="kw">:</span><span class="at"> </span><span class="st">'2026-06-27 09:00'</span></span>
 <span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="at">    </span><span class="fu">latest_run</span><span class="kw">:</span><span class="at"> </span><span class="st">'2026-06-27 09:01'</span></span>
 <span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="at">    </span><span class="fu">script_runtime</span><span class="kw">:</span><span class="at"> 0.2 min</span></span>
 <span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="at">    </span><span class="fu">n_outputs</span><span class="kw">:</span><span class="at"> </span><span class="dv">2</span></span>
 <span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> output/fig1.tex</span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> output/tab1.tex</span></span></code></pre></div>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> output/age_dist.png</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> output/clean.csv</span></span></code></pre></div>
 <p>For write functions not in the built-in list, pass a <code>list</code> to <code>extra_hooks</code> with the function names and their file-path arguments:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/tinytrail.html">tinytrail</a></span><span class="op">(</span></span>
@@ -124,19 +115,18 @@
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="at">        </span><span class="fu">id</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="dv">1</span><span class="kw">,</span><span class="at"> </span><span class="dv">2</span><span class="kw">,</span><span class="at"> </span><span class="dv">3</span><span class="kw">,</span><span class="at"> </span><span class="dv">4</span><span class="kw">,</span><span class="at"> </span><span class="dv">5</span><span class="kw">]</span></span>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="at">        </span><span class="fu">age</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="dv">34</span><span class="kw">,</span><span class="at"> </span><span class="dv">52</span><span class="kw">,</span><span class="at"> </span><span class="dv">28</span><span class="kw">,</span><span class="at"> </span><span class="dv">41</span><span class="kw">,</span><span class="at"> </span><span class="dv">37</span><span class="kw">]</span></span>
 <span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="at">        </span><span class="fu">response</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">'yes'</span><span class="kw">,</span><span class="at"> </span><span class="st">'no'</span><span class="kw">,</span><span class="at"> </span><span class="st">'yes'</span><span class="kw">,</span><span class="at"> </span><span class="st">'yes'</span><span class="kw">,</span><span class="at"> </span><span class="st">'no'</span><span class="kw">]</span></span></code></pre></div>
-<p>tinytrail_write() is for when you want to track only a subset of the output</p>
-<p>Perhaps you only need to track a limited set of outputs, then you can hook <code><a href="reference/tinytrail_write.html">tinytrail_write()</a></code> those outputs:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="at">ggsave(</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="at">file = tinytrail_write(</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="at">  </span><span class="st">"output/tab1.tex"</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="at">))</span></span></code></pre></div>
-<p>Since <code><a href="reference/tinytrail_write.html">tinytrail_write()</a></code> is just a thin wrapper</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="at">ggsave(</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="at">file = tinytrail_write(</span></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="at">here::here("output/tab1.tex")</span></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="at">))</span></span></code></pre></div>
-<p>works as expected.</p>
+<div class="section level3">
+<h3 id="manual-tracking-with-auto--false">Manual tracking with <code>auto = FALSE</code>
+<a class="anchor" aria-label="anchor" href="#manual-tracking-with-auto--false"></a>
+</h3>
+<p>To track only specific outputs, set <code>auto = FALSE</code> and use <code><a href="reference/tinytrail_write.html">tinytrail_write()</a></code> explicitly. It returns its argument invisibly, so it drops inline into any save call:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/tinytrail.html">tinytrail</a></span><span class="op">(</span><span class="st">"Export selected results"</span>, auto <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">dat</span>, <span class="fu"><a href="reference/tinytrail_write.html">tinytrail_write</a></span><span class="op">(</span><span class="st">"output/clean.csv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">model</span>, <span class="fu"><a href="reference/tinytrail_write.html">tinytrail_write</a></span><span class="op">(</span><span class="fu">here</span><span class="fu">::</span><span class="fu">here</span><span class="op">(</span><span class="st">"output/model.rds"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/trail_sketch.png" width="100%" alt="A pencil sketch of an alpine landscape with winding trails"></p>
+</div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -166,7 +156,7 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Tomas Reivinger <br><small class="roles"> Author, maintainer </small>   </li>
+<li>Tomas Reivinger <br><small class="roles"> Author, maintainer, copyright holder </small>   </li>
 </ul>
 </div>
 

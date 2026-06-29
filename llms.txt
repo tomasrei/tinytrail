@@ -13,62 +13,52 @@ along with sample values (optional) in the YAML.
 
 ``` r
 
+install.packages("tinytrail")
+
 # Development version from GitHub:
-# install.packages("pak")
 pak::pak("tinytrail-r/tinytrail")
 ```
 
 ## Usage
 
-Place
+Call
 [`tinytrail()`](https://tinytrail-r.github.io/tinytrail/reference/tinytrail.md)
-once near the top of each script and wrap save calls with
-[`tinytrail_write()`](https://tinytrail-r.github.io/tinytrail/reference/tinytrail_write.md):
+once near the top of each script. Common write functions are intercepted
+automatically:
 
 ``` r
 
 library(tinytrail)
-library(ggplot2)
-library(tinytable)
 
 tinytrail(
-  description = "Summarise survey responses by age group",
+  description = "Clean and summarise survey data",
   data_source = "Current Population Survey (BLS)"
 )
 
-dat <- read.csv("data/raw/survey.csv") 
+dat <- read.csv("data/raw/survey.csv")
 
+write.csv(dat, "output/clean.csv")   # auto-tracked
 
-# wrap the path with tinytrail_write() to register the output
-ggplot(dat) +
-  aes(x = age, fill = response) +
-  geom_histogram() |>
-  ggsave(file = tinytrail_write("output/fig1.tex"))
-
-# same for tables
-lm(age ~ response, data = dat) |>
-  summary() |>
-  coef() |>
-  tt(digits = 3) |>
-  save_tt(file = tinytrail_write("output/tab1.tex"))
+png("output/age_dist.png")           # auto-tracked
+hist(dat$age, main = "Age distribution")
+dev.off()
 ```
 
 [`tinytrail()`](https://tinytrail-r.github.io/tinytrail/reference/tinytrail.md)
-automatically captures the file name and creates or updates
-`_tinytrail.yaml`:
+detects the script name and creates or updates `_tinytrail.yaml`:
 
 ``` yaml
 scripts:
   01_clean.R:
-    description: Summarise survey responses by age group
+    description: Clean and summarise survey data
     data_source: Current Population Survey (BLS)
     first_run: '2026-06-27 09:00'
     latest_run: '2026-06-27 09:01'
     script_runtime: 0.2 min
     n_outputs: 2
     outputs:
-    - output/fig1.tex
-    - output/tab1.tex
+    - output/age_dist.png
+    - output/clean.csv
 ```
 
 For write functions not in the built-in list, pass a `list` to
@@ -112,33 +102,20 @@ data_dictionary:
         response: ['yes', 'no', 'yes', 'yes', 'no']
 ```
 
-tinytrail_write() is for when you want to track only a subset of the
-output
+### Manual tracking with `auto = FALSE`
 
-Perhaps you only need to track a limited set of outputs, then you can
-hook
+To track only specific outputs, set `auto = FALSE` and use
 [`tinytrail_write()`](https://tinytrail-r.github.io/tinytrail/reference/tinytrail_write.md)
-those outputs:
+explicitly. It returns its argument invisibly, so it drops inline into
+any save call:
 
-``` yaml
-ggsave(
-file = tinytrail_write(
-  "output/tab1.tex"
-))
+``` r
+
+tinytrail("Export selected results", auto = FALSE)
+
+write.csv(dat, tinytrail_write("output/clean.csv"))
+saveRDS(model, tinytrail_write(here::here("output/model.rds")))
 ```
-
-Since
-[`tinytrail_write()`](https://tinytrail-r.github.io/tinytrail/reference/tinytrail_write.md)
-is just a thin wrapper
-
-``` yaml
-ggsave(
-file = tinytrail_write(
-here::here("output/tab1.tex")
-))
-```
-
-works as expected.
 
 ![A pencil sketch of an alpine landscape with winding
 trails](reference/figures/trail_sketch.png)
