@@ -103,7 +103,7 @@ withr::with_tempdir({
   write.csv(mtcars, "clean.csv")
   png("age_dist.png"); hist(mtcars$mpg, main = "MPG"); dev.off()
 })
-#> agg_record_19d366ff8cd3 
+#> agg_record_19922828779d 
 #>                       2 
 # }
 ```
